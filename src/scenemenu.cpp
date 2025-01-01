@@ -54,22 +54,27 @@ SceneMenu::SceneMenu()
 
     // Piramit baş aşağı bakıyor
     m_selectorModel->getTransform()->setEuler({180.f, 0.f, 0.f});
-    m_selectorModel->getTransform()->setScale(glm::vec3(0.6));
+    m_selectorModel->getTransform()->setScale(glm::vec3(0.6f));
     m_selectorModel->setSelectable(false); // Seçilemez yapıldı
     addModel(m_selectorModel); // Sahneye ekleyin
+
+    // Aktif kameraya gösterge ekle
+    Camera* activeCam = getActiveCamera();
+    if (activeCam) {
+        addExtraCamera(activeCam);
+    }
 }
 
 SceneMenu::~SceneMenu()
 {
     delete m_selectorModel;
-    for (auto* cam : m_cameraList) {
-        delete cam;
-    }
+    // Kameralar ve göstergeler Scene sınıfı tarafından siliniyor
 }
 
 void SceneMenu::addExtraCamera(Camera* cam)
 {
-    m_cameraList.push_back(cam);
+    // Base class'taki addExtraCamera metodunu çağırarak göstergeyi ekle
+    Scene::addExtraCamera(cam);
 }
 
 void SceneMenu::updateSelector(float dt)
@@ -104,6 +109,22 @@ void SceneMenu::updateSelector(float dt)
 void SceneMenu::renderGui()
 {
     updateSelector(0.016f);
+
+    // Kamera göstergelerini güncelle
+    for(auto& camWithIndicator : m_camerasWithIndicators){
+        Camera* cam = camWithIndicator.camera;
+        Model* indicator = camWithIndicator.indicator;
+
+        if(cam && indicator){
+            auto pos = cam->getTransform()->getPosition();
+            auto look = cam->getTransform()->getLook();
+            auto euler = cam->getTransform()->getEuler();
+
+            // Göstergenin pozisyonunu ayarla (kameranın arkasında)
+            indicator->getTransform()->setPosition(pos + (look * 0.5f)); // 0.5.f uzaklıkta
+            indicator->getTransform()->setEuler({euler.x, euler.y - 90.f, euler.z + 90.f}); // Yana yatık
+        }
+    }
 
     ImGui::Begin("Model Control");
 
@@ -208,22 +229,22 @@ void SceneMenu::renderGui()
     ImGui::Text("Camera Selection");
     ImGui::Separator();
 
-    int totalCam = 1 + static_cast<int>(m_cameraList.size());
+    int totalCam = 1 + static_cast<int>(m_camerasWithIndicators.size());
     if (m_cameraIndex >= totalCam) m_cameraIndex = totalCam - 1;
 
     bool camChanged = ImGui::SliderInt("Camera##Index", &m_cameraIndex, 0, totalCam - 1);
 
     Camera* currentCam = nullptr;
     if (m_cameraIndex == 0) {
-        currentCam = m_activeCamera;
+        currentCam = getActiveCamera();
     } else {
         int idx = m_cameraIndex - 1;
-        if (idx >= 0 && idx < static_cast<int>(m_cameraList.size())) {
-            currentCam = m_cameraList[idx];
+        if (idx >= 0 && idx < static_cast<int>(m_camerasWithIndicators.size())) {
+            currentCam = m_camerasWithIndicators[idx].camera;
         }
     }
 
-    if (currentCam && currentCam != m_activeCamera) {
+    if (currentCam && currentCam != getActiveCamera()) {
         setActiveCamera(currentCam);
         camChanged = true;
     }
@@ -320,7 +341,7 @@ void SceneMenu::renderGui()
 
     if (ImGui::Button("Create Camera")) {
         auto* newCam = new Camera(camFOV, camWidth / camHeight, camNear, camFar);
-        m_cameraList.push_back(newCam);
+        addExtraCamera(newCam); // Otomatik olarak gösterge eklenir
     }
 
     ImGui::End();

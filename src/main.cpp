@@ -118,31 +118,8 @@ int main(int argc, char** argv)
         scene.addModel(cube);
     }
 
-    // 11) Kamerayı simgeleyen 2 piramit (cameraIndicator0, cameraIndicator1)
-    // Arkamızda, yana yatık, sivri ucu baktığımız yön
-    auto cameraIndicator0 = new graf::Model();
-    cameraIndicator0->setVertexArrayObject(
-        graf::ShapeCreator::createShape(graf::ShapeTypes::Pyramid)
-    );
-    cameraIndicator0->setShaderProgramName("TextureShader");
-    cameraIndicator0->setTextureName("hava.jpg");
-    glLineWidth(4.0f); 
-    cameraIndicator0->setFillMode(GL_LINE);
-    cameraIndicator0->getTransform()->setScale(glm::vec3(0.2f)); // Daha küçük yapıldı
-    cameraIndicator0->setSelectable(false); // Seçilemez yapıldı
-    scene.addModel(cameraIndicator0); // Sahneye eklendi
-
-    auto cameraIndicator1 = new graf::Model();
-    cameraIndicator1->setVertexArrayObject(
-        graf::ShapeCreator::createShape(graf::ShapeTypes::Pyramid)
-    );
-    cameraIndicator1->setShaderProgramName("TextureShader");
-    cameraIndicator1->setTextureName("hava.jpg");
-    glLineWidth(4.0f); 
-    cameraIndicator1->setFillMode(GL_LINE);
-    cameraIndicator1->getTransform()->setScale(glm::vec3(0.2f)); // Daha küçük yapıldı
-    cameraIndicator1->setSelectable(false); // Seçilemez yapıldı
-    scene.addModel(cameraIndicator1); // Sahneye eklendi
+    // **Manuel olarak eklenen kamera göstergelerini kaldırın**
+    // Artık `Scene` sınıfı bu göstergeleri otomatik olarak ekleyecek
 
     // 12) Render döngüsü
     glwindow.setRenderFunction([&](){
@@ -151,22 +128,6 @@ int main(int argc, char** argv)
         glViewport(0,0,w,h);
         glClearColor(0.f,0.4f,0.7f,1.f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
-        // CameraIndicator0 => camera0
-        {
-            auto pos0 = camera0->getTransform()->getPosition();
-            auto look0 = camera0->getTransform()->getLook();
-            auto eul0 = camera0->getTransform()->getEuler();
-            cameraIndicator0->getTransform()->setPosition(pos0 + (look0 * 1.f)); // Pozisyonu doğru hesaplayın
-            cameraIndicator0->getTransform()->setEuler({eul0.x, eul0.y- 90.f, eul0.z + 90.f}); // Yana yatık
-
-            // CameraIndicator1 => camera1
-            auto pos1 = camera1->getTransform()->getPosition();
-            auto look1 = camera1->getTransform()->getLook();
-            auto eul1 = camera1->getTransform()->getEuler();
-            cameraIndicator1->getTransform()->setPosition(pos1 - (look1 * 1.f)); // Pozisyonu doğru hesaplayın
-            cameraIndicator1->getTransform()->setEuler({eul1.x, eul1.y -90.f, eul1.z + 90.f}); // Yana yatık
-        }
 
         // Ana sahneyi çiz
         scene.render(true); // => GUI var

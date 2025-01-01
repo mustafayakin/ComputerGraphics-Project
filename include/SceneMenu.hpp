@@ -18,7 +18,7 @@ namespace graf {
         ~SceneMenu();
 
         void renderGui() override;
-        void addExtraCamera(Camera* cam);
+        void addExtraCamera(Camera* cam) override;
 
         void updateSelector(float dt);
 
@@ -28,7 +28,6 @@ namespace graf {
         std::vector<std::string> m_textureList;
         int   m_selectedTextureIndex;
 
-        std::vector<Camera*> m_cameraList;
         int   m_cameraIndex;
 
         float m_fov;
