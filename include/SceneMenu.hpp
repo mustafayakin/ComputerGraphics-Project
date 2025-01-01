@@ -1,3 +1,4 @@
+// SceneMenu.hpp
 #ifndef SCENEMENU_HPP
 #define SCENEMENU_HPP
 
@@ -45,4 +46,4 @@ namespace graf {
 
 } // namespace graf
 
-#endif
+#endif // SCENEMENU_HPP

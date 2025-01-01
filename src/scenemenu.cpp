@@ -1,3 +1,4 @@
+// SceneMenu.cpp
 #include "SceneMenu.hpp"
 #include <imgui/imgui.h>
 #include "Model.hpp"
@@ -49,10 +50,13 @@ SceneMenu::SceneMenu()
     );
     m_selectorModel->setShapeType(ShapeTypes::Pyramid);
     m_selectorModel->setShaderProgramName("TextureShader");
-    m_selectorModel->setTextureName("container.jpg");
+    m_selectorModel->setTextureName("hava.jpg");
 
     // Piramit baş aşağı bakıyor
     m_selectorModel->getTransform()->setEuler({180.f, 0.f, 0.f});
+    m_selectorModel->getTransform()->setScale(glm::vec3(0.6));
+    m_selectorModel->setSelectable(false); // Seçilemez yapıldı
+    addModel(m_selectorModel); // Sahneye ekleyin
 }
 
 SceneMenu::~SceneMenu()
@@ -71,17 +75,29 @@ void SceneMenu::addExtraCamera(Camera* cam)
 void SceneMenu::updateSelector(float dt)
 {
     m_selectorAnimTime += dt;
-    float offsetY = 0.3f * sinf(m_selectorAnimTime * 2.f);
+    float offsetY = 0.15f * sinf(m_selectorAnimTime * 1.f); // Daha yavaş ve az hareket
 
     if (m_modelList.empty()) return;
     if (m_selectedModelId < 0 || m_selectedModelId >= (int)m_modelList.size()) return;
 
-    auto selM = m_modelList[m_selectedModelId];
-    if (selM == m_selectorModel) return;
+    // Seçilen modelin sadece seçilebilir olup olmadığını kontrol edin
+    int selectableCount = 0;
+    Model* selectedModel = nullptr;
+    for(auto* model : m_modelList){
+        if(model->isSelectable()){
+            if(selectableCount == m_selectedModelId){
+                selectedModel = model;
+                break;
+            }
+            selectableCount++;
+        }
+    }
 
-    auto pos = selM->getTransform()->getPosition();
+    if(selectedModel == nullptr || selectedModel == m_selectorModel) return;
+
+    auto pos = selectedModel->getTransform()->getPosition();
     m_selectorModel->getTransform()->setPosition({
-        pos.x, pos.y + 1.5f + offsetY, pos.z
+        pos.x, pos.y + 2.0f + offsetY, pos.z // Daha az yukarıya çıkar
     });
 }
 
@@ -91,16 +107,24 @@ void SceneMenu::renderGui()
 
     ImGui::Begin("Model Control");
 
+    // Seçilebilir modelleri listele
+    std::vector<Model*> selectableModels;
+    for(auto* model : m_modelList){
+        if(model->isSelectable()){
+            selectableModels.push_back(model);
+        }
+    }
+
     // Model seçimi
-    int maxCount = (int)m_modelList.size() - 1;
+    int maxCount = static_cast<int>(selectableModels.size()) - 1;
     if (maxCount < 0) maxCount = 0;
     if (m_selectedModelId > maxCount) m_selectedModelId = maxCount;
     if (ImGui::SliderInt("Model Id", &m_selectedModelId, 0, maxCount)) {
-        if (!m_modelList.empty()) {
-            auto sel = m_modelList[m_selectedModelId];
+        if (!selectableModels.empty()) {
+            auto sel = selectableModels[m_selectedModelId];
             std::string tName = sel->getTextureName();
             int found = 0;
-            for (int i = 0; i < (int)m_textureList.size(); i++) {
+            for (int i = 0; i < static_cast<int>(m_textureList.size()); i++) {
                 if (m_textureList[i] == tName) {
                     found = i;
                     break;
@@ -111,14 +135,14 @@ void SceneMenu::renderGui()
     }
 
     // Shape tipi değiştirme
-    if (!m_modelList.empty()) {
-        auto& selModel = m_modelList[m_selectedModelId];
-        int currentShapeIndex = (int)selModel->getShapeType();
+    if (!selectableModels.empty()) {
+        auto& selModel = selectableModels[m_selectedModelId];
+        int currentShapeIndex = static_cast<int>(selModel->getShapeType());
         if (ImGui::Combo("Shape", &currentShapeIndex, shapeNames, IM_ARRAYSIZE(shapeNames))) {
             selModel->setVertexArrayObject(
-                ShapeCreator::createShape((ShapeTypes)currentShapeIndex)
+                ShapeCreator::createShape(static_cast<ShapeTypes>(currentShapeIndex))
             );
-            selModel->setShapeType((ShapeTypes)currentShapeIndex);
+            selModel->setShapeType(static_cast<ShapeTypes>(currentShapeIndex));
         }
     }
 
@@ -127,12 +151,13 @@ void SceneMenu::renderGui()
     ImGui::Separator();
 
     if (ImGui::BeginCombo("##TextureCombo", m_textureList[m_selectedTextureIndex].c_str())) {
-        for (int i = 0; i < (int)m_textureList.size(); i++) {
+        for (int i = 0; i < static_cast<int>(m_textureList.size()); i++) {
             bool isSelected = (i == m_selectedTextureIndex);
             if (ImGui::Selectable(m_textureList[i].c_str(), isSelected)) {
                 m_selectedTextureIndex = i;
-                if (!m_modelList.empty()) {
-                    m_modelList[m_selectedModelId]->setTextureName(m_textureList[i]);
+                if (!selectableModels.empty()) {
+                    auto selModel = selectableModels[m_selectedModelId];
+                    selModel->setTextureName(m_textureList[i]);
                 }
             }
             if (isSelected) ImGui::SetItemDefaultFocus();
@@ -141,14 +166,14 @@ void SceneMenu::renderGui()
     }
 
     static float texRep[2] = {1.f, 1.f};
-    if (!m_modelList.empty()) {
-        auto& rep = m_modelList[m_selectedModelId]->getTextureRepeat();
+    if (!selectableModels.empty()) {
+        auto& rep = selectableModels[m_selectedModelId]->getTextureRepeat();
         texRep[0] = rep.x;
         texRep[1] = rep.y;
     }
     if (ImGui::DragFloat2("Repeat", texRep, 0.01f, 0.f, 10.f)) {
-        if (!m_modelList.empty()) {
-            auto& r = m_modelList[m_selectedModelId]->getTextureRepeat();
+        if (!selectableModels.empty()) {
+            auto& r = selectableModels[m_selectedModelId]->getTextureRepeat();
             r.x = texRep[0];
             r.y = texRep[1];
         }
@@ -159,8 +184,8 @@ void SceneMenu::renderGui()
     ImGui::Separator();
 
     static float pp[3], ee[3], ss[3];
-    if (!m_modelList.empty()) {
-        auto selTr = m_modelList[m_selectedModelId]->getTransform();
+    if (!selectableModels.empty()) {
+        auto selTr = selectableModels[m_selectedModelId]->getTransform();
         auto p = selTr->getPosition();
         auto e = selTr->getEuler();
         auto s = selTr->getScale();
@@ -183,7 +208,7 @@ void SceneMenu::renderGui()
     ImGui::Text("Camera Selection");
     ImGui::Separator();
 
-    int totalCam = 1 + (int)m_cameraList.size();
+    int totalCam = 1 + static_cast<int>(m_cameraList.size());
     if (m_cameraIndex >= totalCam) m_cameraIndex = totalCam - 1;
 
     bool camChanged = ImGui::SliderInt("Camera##Index", &m_cameraIndex, 0, totalCam - 1);
@@ -193,7 +218,7 @@ void SceneMenu::renderGui()
         currentCam = m_activeCamera;
     } else {
         int idx = m_cameraIndex - 1;
-        if (idx >= 0 && idx < (int)m_cameraList.size()) {
+        if (idx >= 0 && idx < static_cast<int>(m_cameraList.size())) {
             currentCam = m_cameraList[idx];
         }
     }
@@ -269,9 +294,9 @@ void SceneMenu::renderGui()
     if (ImGui::Button("Create Model")) {
         auto newModel = new Model();
         newModel->setVertexArrayObject(
-            ShapeCreator::createShape((ShapeTypes)selectedShapeIndex)
+            ShapeCreator::createShape(static_cast<ShapeTypes>(selectedShapeIndex))
         );
-        newModel->setShapeType((ShapeTypes)selectedShapeIndex);
+        newModel->setShapeType(static_cast<ShapeTypes>(selectedShapeIndex));
         newModel->setShaderProgramName("TextureShader");
         newModel->setTextureName(selectedTexture);
         newModel->getTextureRepeat() = {modelRepeat[0], modelRepeat[1]};
@@ -297,7 +322,6 @@ void SceneMenu::renderGui()
         auto* newCam = new Camera(camFOV, camWidth / camHeight, camNear, camFar);
         m_cameraList.push_back(newCam);
     }
-
 
     ImGui::End();
 }

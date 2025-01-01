@@ -1,3 +1,5 @@
+// main.cpp
+
 #define GLFW_INCLUDE_NONE
 
 #include "GLWindow.hpp"
@@ -31,15 +33,12 @@ int main(int argc, char** argv)
     camera0->getTransform()->setPosition(glm::vec3(0.f, 1.5f, 10.f));
     camera0->getTransform()->setEuler(glm::vec3(0.f, 0.f, 0.f)); 
     // Öne bakıyor (Z+)
-    // 4) Kamera1 (ekstra kamera)
+
     // 4) Kamera1 (ekstra kamera)
     auto* camera1 = new graf::Camera(60.f, 800.f / 600.f, 0.1f, 1000.f); // Yeni kamera
     camera1->getTransform()->setPosition(glm::vec3(0.f, 5.f, 10.f));
     camera1->getTransform()->setEuler(glm::vec3(-30.f, 0.f, 0.f));
     scene.addExtraCamera(camera1); // Yeni kamera sahneye ekleniyor
-
-    // Öne bakıyor (Z+)
-
 
     // 5) TopViewCamera (mini viewport)
     auto* topViewCamera = new graf::Camera(60.f, 1.f, 0.1f, 1000.f);
@@ -120,24 +119,30 @@ int main(int argc, char** argv)
     }
 
     // 11) Kamerayı simgeleyen 2 piramit (cameraIndicator0, cameraIndicator1)
-    //     Arkamızda, yana yatık, sivri ucu baktığımız yön
+    // Arkamızda, yana yatık, sivri ucu baktığımız yön
     auto cameraIndicator0 = new graf::Model();
     cameraIndicator0->setVertexArrayObject(
         graf::ShapeCreator::createShape(graf::ShapeTypes::Pyramid)
     );
     cameraIndicator0->setShaderProgramName("TextureShader");
-    cameraIndicator0->setTextureName("wall.jpg");
+    cameraIndicator0->setTextureName("hava.jpg");
+    glLineWidth(4.0f); 
     cameraIndicator0->setFillMode(GL_LINE);
-    cameraIndicator0->getTransform()->setScale(glm::vec3(0.2f));
+    cameraIndicator0->getTransform()->setScale(glm::vec3(0.2f)); // Daha küçük yapıldı
+    cameraIndicator0->setSelectable(false); // Seçilemez yapıldı
+    scene.addModel(cameraIndicator0); // Sahneye eklendi
 
     auto cameraIndicator1 = new graf::Model();
     cameraIndicator1->setVertexArrayObject(
         graf::ShapeCreator::createShape(graf::ShapeTypes::Pyramid)
     );
     cameraIndicator1->setShaderProgramName("TextureShader");
-    cameraIndicator1->setTextureName("wall.jpg");
+    cameraIndicator1->setTextureName("hava.jpg");
+    glLineWidth(4.0f); 
     cameraIndicator1->setFillMode(GL_LINE);
-    cameraIndicator1->getTransform()->setScale(glm::vec3(0.2f));
+    cameraIndicator1->getTransform()->setScale(glm::vec3(0.2f)); // Daha küçük yapıldı
+    cameraIndicator1->setSelectable(false); // Seçilemez yapıldı
+    scene.addModel(cameraIndicator1); // Sahneye eklendi
 
     // 12) Render döngüsü
     glwindow.setRenderFunction([&](){
@@ -149,20 +154,18 @@ int main(int argc, char** argv)
 
         // CameraIndicator0 => camera0
         {
-                        // CameraIndicator0 => camera0
             auto pos0 = camera0->getTransform()->getPosition();
             auto look0 = camera0->getTransform()->getLook();
             auto eul0 = camera0->getTransform()->getEuler();
-            cameraIndicator0->getTransform()->setPosition(pos0 - (look0 * 6.f)); // Pozisyonu doğru hesaplayın
-            cameraIndicator0->getTransform()->setEuler({eul0.x, eul0.y, eul0.z + 90.f}); // Yana yatık
+            cameraIndicator0->getTransform()->setPosition(pos0 + (look0 * 1.f)); // Pozisyonu doğru hesaplayın
+            cameraIndicator0->getTransform()->setEuler({eul0.x, eul0.y- 90.f, eul0.z + 90.f}); // Yana yatık
 
             // CameraIndicator1 => camera1
             auto pos1 = camera1->getTransform()->getPosition();
             auto look1 = camera1->getTransform()->getLook();
             auto eul1 = camera1->getTransform()->getEuler();
-            cameraIndicator1->getTransform()->setPosition(pos1 - (look1 * 6.f)); // Pozisyonu doğru hesaplayın
-            cameraIndicator1->getTransform()->setEuler({eul1.x, eul1.y, eul1.z + 90.f}); // Yana yatık
-
+            cameraIndicator1->getTransform()->setPosition(pos1 - (look1 * 1.f)); // Pozisyonu doğru hesaplayın
+            cameraIndicator1->getTransform()->setEuler({eul1.x, eul1.y -90.f, eul1.z + 90.f}); // Yana yatık
         }
 
         // Ana sahneyi çiz

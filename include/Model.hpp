@@ -1,3 +1,4 @@
+// Model.hpp
 #ifndef MODEL_HPP
 #define MODEL_HPP
 
@@ -29,6 +30,10 @@ namespace graf {
 
         void draw(const glm::mat4& MVP);
         void setFillMode(unsigned int mode);
+        
+        // Yeni eklenen fonksiyonlar
+        bool isSelectable() const;
+        void setSelectable(bool selectable);
 
         // Yeni: shape type
         void setShapeType(ShapeTypes st) { m_shapeType = st; }
@@ -41,10 +46,11 @@ namespace graf {
         std::string m_textureName;
         glm::vec2   m_TextureRepeat;
         unsigned int m_fillType;
-
+        // Yeni eklenen üye
+        bool m_selectable;
         // Eklendi
         ShapeTypes m_shapeType;
     };
 }
 
-#endif
+#endif // MODEL_HPP

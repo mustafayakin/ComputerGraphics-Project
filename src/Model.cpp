@@ -1,3 +1,4 @@
+// Model.cpp
 #include "Model.hpp"
 #include "transform.hpp"
 #include "shadermanager.hpp"
@@ -18,6 +19,7 @@ Model::Model()
     m_TextureRepeat = glm::vec2(1.0f, 1.0f);
     m_fillType    = GL_FILL;
     m_shapeType   = ShapeTypes::Square; // varsayalım Square
+    setSelectable(true); // Varsayılan olarak seçilebilir
 }
 
 Model::~Model()
@@ -96,6 +98,15 @@ void Model::draw(const glm::mat4& MVP)
     m_vao->unbind();
 
     program->unuse();
+}
+
+// Yeni eklenen fonksiyonlar
+bool Model::isSelectable() const {
+    return m_selectable;
+}
+
+void Model::setSelectable(bool selectable) {
+    m_selectable = selectable;
 }
 
 } // namespace graf
